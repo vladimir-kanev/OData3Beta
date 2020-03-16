@@ -1,19 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
-using ODataCore31.Models;
 
 namespace ODataCore31
 {
@@ -31,7 +25,9 @@ namespace ODataCore31
         {
             services.AddControllers(mvcOptions => 
                 mvcOptions.EnableEndpointRouting = false);
-            
+
+            services.AddDbContext<PersonContext>(options => options.UseInMemoryDatabase("person"));
+
             services.AddOData();
         }
 
@@ -47,7 +43,7 @@ namespace ODataCore31
 
             app.UseMvc(routeBuilder =>
             {
-                routeBuilder.Select().Filter().Expand();
+                routeBuilder.Select().Filter().Expand().OrderBy();
                 routeBuilder.MapODataServiceRoute("odata", "odata", GetEdmModel());
             });
         }
@@ -55,9 +51,25 @@ namespace ODataCore31
         private IEdmModel GetEdmModel()
         {
             var edmBuilder = new ODataConventionModelBuilder();
-            edmBuilder.EntitySet<Student>("Students");
+            edmBuilder.EntitySet<Person>("Persons");
 
             return edmBuilder.GetEdmModel();
         }
+    }
+
+    public class PersonContext : DbContext
+    {
+        public PersonContext(DbContextOptions<PersonContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Person> People { get; set; }
+    }
+
+    public class Person
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public DateTime Date { get; set; }
     }
 }
